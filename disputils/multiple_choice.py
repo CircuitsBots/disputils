@@ -112,22 +112,24 @@ class MultipleChoice(Dialog):
         if closable:
             await self.message.add_reaction(self.close_emoji)
 
-        def check(r, u):
-            res = (r.message.id == self.message.id) and (u.id in [_u.id for _u in users]) and (
-                        r.emoji in self._emojis or r.emoji == self.close_emoji)
+        def check(payload):
+            e = payload.emoji.name
+            res = (payload.message_id == self.message.id) and (payload.user_id in [_u.id for _u in users]) and (
+                        e in self._emojis or e == self.close_emoji)
             return res
 
         try:
-            reaction, user = await self._client.wait_for('reaction_add', check=check, timeout=timeout)
+            payload = await self._client.wait_for('raw_reaction_add', check=check, timeout=timeout)
+            e = payload.emoji.name
         except asyncio.TimeoutError:
             self._choice = None
             return None, self.message
 
-        if closable and reaction.emoji == self.close_emoji:
+        if closable and e == self.close_emoji:
             self._choice = None
             return None, self.message
 
-        index = self._emojis.index(reaction.emoji)
+        index = self._emojis.index(e)
         self._choice = self.options[index]
 
         return self._choice, self.message

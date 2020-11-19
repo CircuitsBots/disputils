@@ -55,18 +55,19 @@ class Confirmation(Dialog):
             await msg.add_reaction(emoji)
 
         try:
-            reaction, user = await self._client.wait_for(
-                'reaction_add',
-                check=lambda r, u: (r.message.id == msg.id) and (u.id == user.id) and (r.emoji in self.emojis),
+            payload = await self._client.wait_for(
+                'raw_reaction_add',
+                check=lambda p: (p.message_id == msg.id) and (p.user_id == user.id) and (p.emoji.name in self.emojis),
                 timeout=20
             )
+            e = payload.emoji.name
         except asyncio.TimeoutError:
             self._confirmed = None
             return
         finally:
             await msg.clear_reactions()
 
-        confirmed = self.emojis[reaction.emoji]
+        confirmed = self.emojis[e]
 
         self._confirmed = confirmed
         return confirmed
