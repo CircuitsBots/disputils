@@ -95,19 +95,22 @@ class MultipleChoice(Dialog):
         self._parse_kwargs(**kwargs)
         timeout = kwargs.get("timeout", 60)
         closable: bool = kwargs.get("closable", True)
+        clear_reactions: bool = kwargs.get('clear_reactions', True)
 
         config_embed = self._generate_embed()
 
         if channel is not None:
             self.message = await channel.send(embed=config_embed)
         elif self.message is not None:
-            await self.message.clear_reactions()
+            if clear_reactions:
+                await self.message.clear_reactions()
             await self.message.edit(content=self.message.content, embed=config_embed)
         else:
             raise TypeError("Missing argument. You need to specify either 'channel' or 'message' as a target.")
 
-        for emoji in self._emojis:
-            await self.message.add_reaction(emoji)
+        if clear_reactions:
+            for emoji in self._emojis:
+                await self.message.add_reaction(emoji)
 
         if closable:
             await self.message.add_reaction(self.close_emoji)
@@ -131,6 +134,8 @@ class MultipleChoice(Dialog):
 
         index = self._emojis.index(e)
         self._choice = self.options[index]
+
+        await self.message.remove_reaction(e, payload.member)
 
         return self._choice, self.message
 
